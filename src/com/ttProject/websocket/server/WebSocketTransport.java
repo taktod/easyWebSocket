@@ -77,7 +77,7 @@ public class WebSocketTransport {
 	 */
 	public void run() {
 		executors = Executors.newFixedThreadPool(threads);
-		WebSocketConnectionManager manager = new WebSocketConnectionManager();
+		WebSocketManager manager = new WebSocketManager();
 		try {
 			// 下準備を実行します。
 			ServerSocketChannel serverChannel = null;

@@ -8,11 +8,14 @@ import java.util.Map;
  * 接続を管理するマネージャー
  * @author taktod
  */
-public class WebSocketConnectionManager {
+public class WebSocketManager {
 	/**
 	 * このマップでSocketChannelとConnectDataの結びつきを実行しておく。
 	 */
 	private static final Map<SocketChannel, WebSocketConnection> connectMap = new HashMap<SocketChannel, WebSocketConnection>();
+
+	private static final Map<String, WebSocketScope> scopeMap = new HashMap<String, WebSocketScope>();
+
 	/**
 	 * あたらしい接続を保持します。
 	 */
@@ -23,6 +26,7 @@ public class WebSocketConnectionManager {
 			connectMap.put(channel, connectData);
 		}
 	}
+
 	/**
 	 * 閉じた接続を解放しておきます。
 	 * @param channel
@@ -37,6 +41,7 @@ public class WebSocketConnectionManager {
 			connectData.close();
 		}
 	}
+
 	public WebSocketConnection getConnectData(SocketChannel channel) {
 		synchronized(connectMap) {
 			return connectMap.get(channel);

@@ -36,7 +36,6 @@ public class WebSocketHandshake {
 						Pattern pattern = Pattern.compile("GET \\/([\\w\\/]*)\\??(.*) HTTP\\/1\\.1");
 						Matcher matcher = pattern.matcher(data);
 						if(matcher.find()) {
-//							WebSocketConnectionManager manager = new WebSocketConnectionManager();
 							if(matcher.groupCount() != 2) {
 								// パス数がおかしい。
 								break;

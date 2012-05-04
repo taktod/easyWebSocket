@@ -25,6 +25,7 @@ public class WebSocketConnection {
 	
 	private List<ByteBuffer> bufferList = new ArrayList<ByteBuffer>();
 	private ByteBuffer result = null;
+	private byte[] mask = new byte[4];
 	private int maskPos;
 	private long size;
 	private byte first;
@@ -131,7 +132,7 @@ public class WebSocketConnection {
 			if(checkClosing(buffer)) {
 				return;
 			}
-//			analizeData(buffer);
+			analizeData(buffer);
 		}
 		else {
 			// handshakeを実施する。
@@ -141,6 +142,114 @@ public class WebSocketConnection {
 			}
 			catch (Exception e) {
 				e.printStackTrace();
+			}
+		}
+	}
+	private void analizeData(ByteBuffer buffer) {
+		if(version == null) {
+			// hybi00
+			int limit = buffer.limit();
+			while(buffer.position() < limit) {
+				byte data = buffer.get();
+				if(!continuousData) {
+					if(data == 0) {
+						result = ByteBuffer.allocate(buffer.capacity());
+						result.clear();
+						continuousData = true;
+					}
+					else {
+						// invalid data...
+						break;
+					}
+				}
+				else {
+					if(data == -1) {
+						continuousData = false;
+						result.flip();
+						// この時点でデータ取得が完了している。
+						try {
+//							System.out.println(new String(result.array(), "UTF-8").trim());
+							this.send(new String(result.array(), "UTF-8").trim());
+						}
+						catch (Exception e) {
+						}
+					}
+					else {
+						if(result.position() > result.capacity() - 10) {
+							ByteBuffer newResult = ByteBuffer.allocate(result.capacity() * 8);
+							result.flip();
+							newResult.put(result);
+							result = newResult;
+						}
+						result.put(data);
+					}
+				}
+			}
+		}
+		else {
+			// rfc6455
+			while(buffer.position() < buffer.limit()) {
+				if(!continuousData) {
+					first = buffer.get();
+					if((first & 0x0F) != 0x01) { // 文字列のみうけいれる。
+						return;
+					}
+					continuousData = true;
+					byte second = buffer.get();
+					// データサイズ保持
+					if((second & 0x7F) == 0x7E) {
+						size = buffer.getShort();
+					}
+					else if((second & 0x7F) == 0x7F) {
+						size = buffer.getLong();
+					}
+					else {
+						size = second & 0x7F;
+					}
+					result = ByteBuffer.allocate((int)size);
+					if((second & 0x80) != 0x00) {
+						mask[0] = buffer.get();
+						mask[1] = buffer.get();
+						mask[2] = buffer.get();
+						mask[3] = buffer.get();
+					}
+					else {
+						mask[0] = 0;
+						mask[1] = 0;
+						mask[2] = 0;
+						mask[3] = 0;
+					}
+					maskPos = 0;
+				}
+				try {
+					while(maskPos < size) {
+						result.put((byte)(mask[(maskPos % 4)] ^ buffer.get()));
+						maskPos ++;
+					}
+				}
+				catch (Exception e) {
+					return;
+				}
+				continuousData = false;
+				bufferList.add(result);
+				if((first & 0x80) != 0x00) {
+					size = 0;
+					for(ByteBuffer buf : bufferList) {
+						size += buf.capacity();
+					}
+					ByteBuffer result = ByteBuffer.allocate((int)size);
+					for(ByteBuffer buf : bufferList) {
+						buf.flip();
+						result.put(buf);
+					}
+					try {
+//						System.out.println(new String(result.array(), "UTF-8").trim());
+						this.send(new String(result.array(), "UTF-8").trim());
+					}
+					catch (Exception e) {
+					}
+					bufferList.clear();
+				}
 			}
 		}
 	}
@@ -169,7 +278,7 @@ public class WebSocketConnection {
 		if(!connected) {
 			return;
 		}
-		WebSocketConnectionManager manager = new WebSocketConnectionManager();
+		WebSocketManager manager = new WebSocketManager();
 		manager.unregisterConnection(channel);
 		try {
 			channel.close();
