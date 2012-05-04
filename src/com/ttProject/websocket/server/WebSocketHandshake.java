@@ -20,7 +20,6 @@ public class WebSocketHandshake {
 		this.conn = conn;
 	}
 	public void handShake(ByteBuffer buffer) throws Exception {
-		System.out.println("start handshake...");
 		byte[] b = new byte[buffer.capacity()];
 		String data;
 		int i = 0;
@@ -31,7 +30,6 @@ public class WebSocketHandshake {
 				if(b.length != 0) {
 					// 取得データサイズが０でない場合
 					data = (new String(b)).trim();
-					System.out.println(data);
 					if(data.contains("GET ")) {
 						Pattern pattern = Pattern.compile("GET \\/([\\w\\/]*)\\??(.*) HTTP\\/1\\.1");
 						Matcher matcher = pattern.matcher(data);
@@ -134,7 +132,9 @@ public class WebSocketHandshake {
 			buf.flip();
 			conn.send(buf);
 			conn.setConnected();
-			// managerに追記が完了したことを登録しておく。
+			// applicationInstanceに登録しておく。
+			WebSocketManager manager = new WebSocketManager();
+			manager.registerApplication(conn);
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -201,7 +201,9 @@ public class WebSocketHandshake {
 		buf.flip();
 		conn.send(buf);
 		conn.setConnected();
-		// scopeに登録しておく。
+		// applicationInstanceに登録しておく。
+		WebSocketManager manager = new WebSocketManager();
+		manager.registerApplication(conn);
 	}
 	private Integer getKeyInteger(String key) {
 		StringBuffer numList = new StringBuffer();

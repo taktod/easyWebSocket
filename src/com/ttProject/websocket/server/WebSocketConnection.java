@@ -7,6 +7,8 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.ttProject.websocket.application.ApplicationInstance;
+
 /**
  * 接続データを保持するモデル
  * @author taktod
@@ -84,11 +86,7 @@ public class WebSocketConnection {
 		}
 		return channel.hashCode();
 	}
-	public WebSocketScope getScope() {
-		return null;
-	}
 	public void send(ByteBuffer buffer) throws IOException{
-		System.out.println(new String(buffer.array()));
 		channel.write(buffer);
 	}
 	public void send(String string) throws UnsupportedEncodingException, IOException {
@@ -168,8 +166,9 @@ public class WebSocketConnection {
 						result.flip();
 						// この時点でデータ取得が完了している。
 						try {
+							getAppInstance().onReceiveData(this, new String(result.array(), "UTF-8").trim());
 //							System.out.println(new String(result.array(), "UTF-8").trim());
-							this.send(new String(result.array(), "UTF-8").trim());
+//							this.send(new String(result.array(), "UTF-8").trim());
 						}
 						catch (Exception e) {
 						}
@@ -243,8 +242,9 @@ public class WebSocketConnection {
 						result.put(buf);
 					}
 					try {
+						getAppInstance().onReceiveData(this, new String(result.array(), "UTF-8").trim());
 //						System.out.println(new String(result.array(), "UTF-8").trim());
-						this.send(new String(result.array(), "UTF-8").trim());
+//						this.send(new String(result.array(), "UTF-8").trim());
 					}
 					catch (Exception e) {
 					}
@@ -286,5 +286,9 @@ public class WebSocketConnection {
 		catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	public ApplicationInstance getAppInstance() {
+		WebSocketManager manager = new WebSocketManager();
+		return manager.getApplication(this);
 	}
 }

@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-
 /**
  * サーバー動作を実行するインスタンス
  * @author taktod
@@ -22,11 +21,13 @@ public class WebSocketTransport {
 	private static final int DEFAULT_BUFFER_SIZE = 2048;
 	private static final int DEFAULT_WEBSOCKET_PORT = 8080;
 	private static final int DEFAULT_TIMEOUT = 1000;
+//	private static final Class<?> DEFAULT_APPLICATION = Application.class;
 
 	private int bufferSize = DEFAULT_BUFFER_SIZE;
 	private int threads = DEFAULT_THREADS;
 	private int port = DEFAULT_WEBSOCKET_PORT;
 	private int timeout = DEFAULT_TIMEOUT;
+//	private Class<?> applicationClass = DEFAULT_APPLICATION;
 
 	private static ExecutorService executors;
 	private Selector selector;
@@ -42,7 +43,7 @@ public class WebSocketTransport {
 	 * @param threads
 	 * @param port
 	 */
-	public WebSocketTransport(int bufferSize, int threads, int port, int timeout) {
+	public WebSocketTransport(int bufferSize, int threads, int port, int timeout, Class<?>applicationClass) {
 		setBufferSize(bufferSize);
 		setThreads(threads);
 		setPort(port);
@@ -71,6 +72,12 @@ public class WebSocketTransport {
 	 */
 	public void setTimeout(int timeout) {
 		this.timeout = timeout;
+	}
+	/**
+	 * @param applicationClass the applicationClass to set
+	 * /
+	public void setApplicationClass(Class<?> applicationClass) {
+		this.applicationClass = applicationClass;
 	}
 	/**
 	 * サーバー開始
@@ -113,8 +120,6 @@ public class WebSocketTransport {
 						channel = (SocketChannel)key.channel();
 						ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
 						if(channel.read(buffer) == -1) {
-							System.out.println("切断イベント");
-							System.out.println(channel.hashCode());
 							// 閉じるイベント
 							// 切断したら、保持していたchannelを破棄する必要あり。
 							manager.unregisterConnection(channel);
@@ -122,18 +127,7 @@ public class WebSocketTransport {
 						}
 						WebSocketConnection connect = manager.getConnectData(channel);
 						buffer.flip();
-//						System.out.println(new String(buffer.array()));
 						executors.execute(new ReceiveThread(connect, buffer));
-/*						// データ受信処理
-						System.out.println("読み込みイベント");
-						System.out.println(channel.hashCode());
-						// threadをつくって、そっちで処理させる。
-						ByteBuffer b = ByteBuffer.allocate(4096);
-						channel.read(b);
-						b.flip();
-						String data = new String(b.array());
-						System.out.println(data);
-//						channel.close(); */
  					}
 				}
 			}
