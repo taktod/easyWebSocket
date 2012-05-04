@@ -2,16 +2,22 @@ package com.ttProject.websocket.server;
 
 import java.nio.ByteBuffer;
 
-import com.ttProject.websocket.application.Application;
-
+/**
+ * 各スレッド動作abstractクラス
+ * @author taktod
+ */
 public abstract class TaskThread implements Runnable {
+	/** 動作実行WebSocketConnectionオブジェクト */
 	protected WebSocketConnection connect;
+	/** 動作用データ */
 	protected ByteBuffer buffer;
-	protected Application application;
+	/**
+	 * コンストラクタ
+	 * @param connect
+	 * @param buffer
+	 */
 	public TaskThread(WebSocketConnection connect, ByteBuffer buffer) {
 		this.connect = connect;
 		this.buffer = buffer;
-		// connectから自分のアプリケーションを取得しておく。とれなかったらnull
-		this.application = null;
 	}
 }

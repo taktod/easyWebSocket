@@ -12,11 +12,9 @@ import com.ttProject.websocket.application.ApplicationInstance;
  * @author taktod
  */
 public class WebSocketManager {
-	/**
-	 * このマップでSocketChannelとConnectDataの結びつきを実行しておく。
-	 */
+	/** コネクション保持 */
 	private static final Map<SocketChannel, WebSocketConnection> connectMap = new HashMap<SocketChannel, WebSocketConnection>();
-
+	/** Application保持 */
 	private static final Map<String, ApplicationInstance> applicationMap = new HashMap<String, ApplicationInstance>();
 
 	/**
@@ -56,6 +54,11 @@ public class WebSocketManager {
 		}
 	}
 
+	/**
+	 * コネクションデータをchannelから照会する。
+	 * @param channel
+	 * @return
+	 */
 	public WebSocketConnection getConnectData(SocketChannel channel) {
 		synchronized(connectMap) {
 			return connectMap.get(channel);
@@ -81,6 +84,11 @@ public class WebSocketManager {
 		appInstance.addConnection(connect);
 		appInstance.onConnect(connect);
 	}
+	/**
+	 * アプリケーションを取得する。
+	 * @param connect
+	 * @return
+	 */
 	public ApplicationInstance getApplication(WebSocketConnection connect) {
 		ApplicationInstance appInstance;
 		synchronized(applicationMap) {

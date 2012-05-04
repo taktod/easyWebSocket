@@ -14,23 +14,19 @@ import java.util.concurrent.Executors;
 /**
  * サーバー動作を実行するインスタンス
  * @author taktod
- *
  */
 public class WebSocketTransport {
+	/** 動作パラメーターデフォルト */
 	private static final int DEFAULT_THREADS = Runtime.getRuntime().availableProcessors() * 2;
 	private static final int DEFAULT_BUFFER_SIZE = 2048;
 	private static final int DEFAULT_WEBSOCKET_PORT = 8080;
 	private static final int DEFAULT_TIMEOUT = 1000;
-//	private static final Class<?> DEFAULT_APPLICATION = Application.class;
 
+	/** 動作パラメーター */
 	private int bufferSize = DEFAULT_BUFFER_SIZE;
 	private int threads = DEFAULT_THREADS;
 	private int port = DEFAULT_WEBSOCKET_PORT;
 	private int timeout = DEFAULT_TIMEOUT;
-//	private Class<?> applicationClass = DEFAULT_APPLICATION;
-
-	private static ExecutorService executors;
-	private Selector selector;
 
 	/**
 	 * コンストラクタ
@@ -83,7 +79,8 @@ public class WebSocketTransport {
 	 * サーバー開始
 	 */
 	public void run() {
-		executors = Executors.newFixedThreadPool(threads);
+		Selector selector;
+		ExecutorService executors = Executors.newFixedThreadPool(threads);
 		WebSocketManager manager = new WebSocketManager();
 		try {
 			// 下準備を実行します。

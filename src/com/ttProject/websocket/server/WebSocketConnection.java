@@ -14,24 +14,32 @@ import com.ttProject.websocket.application.ApplicationInstance;
  * @author taktod
  */
 public class WebSocketConnection {
+	/** 接続実体チャンネル */
 	private SocketChannel channel;
 	
-	private String host;
-	private String path;
-	private String origin;
-	private String version = null;
-	private String query;
+	/** 各種接続情報 */
+	private String host; // host
+	private String path; // パス
+	private String origin; // origin URL
+	private String version = null; // 接続バージョン指定
+	private String query; // 接続時Query情報
+
+	/** 状態保持 */
+	private boolean connected = false; // 接続成立しているかフラグ
+	private boolean continuousData = false; // 中途データの受信中フラグ
+
+	/** 内部データ */
+	private List<ByteBuffer> bufferList = new ArrayList<ByteBuffer>(); // 処理待ちバッファリスト
+	private ByteBuffer result = null; // 結果データ
+	private byte[] mask = new byte[4]; // マスクデータ(rfc6455用)
+	private int maskPos; // 現在利用マスク位置
+	private long size; // サイズ
+	private byte first; // 初期バイト
 	
-	private boolean connected = false;
-	private boolean continuousData = false;
-	
-	private List<ByteBuffer> bufferList = new ArrayList<ByteBuffer>();
-	private ByteBuffer result = null;
-	private byte[] mask = new byte[4];
-	private int maskPos;
-	private long size;
-	private byte first;
-	
+	/**
+	 * コンストラクタ
+	 * @param channel
+	 */
 	public WebSocketConnection(SocketChannel channel) {
 		connected = false;
 		this.channel = channel;
@@ -80,15 +88,29 @@ public class WebSocketConnection {
 	public void setQuery(String query) {
 		this.query = query;
 	}
+	public String getRemoteAddress() {
+		return channel.socket().getInetAddress().getHostAddress();
+	}
 	public int getId() throws Exception {
 		if(channel == null) {
 			throw new Exception("invalid channel");
 		}
 		return channel.hashCode();
 	}
+	/**
+	 * データ転送(生byte)
+	 * @param buffer
+	 * @throws IOException
+	 */
 	public void send(ByteBuffer buffer) throws IOException{
 		channel.write(buffer);
 	}
+	/**
+	 * データ転送(文字列)
+	 * @param string
+	 * @throws UnsupportedEncodingException
+	 * @throws IOException
+	 */
 	public void send(String string) throws UnsupportedEncodingException, IOException {
 		byte[] data = string.getBytes("UTF8");
 		int size = data.length;
@@ -124,6 +146,10 @@ public class WebSocketConnection {
 			channel.write(buffer);
 		}
 	}
+	/**
+	 * データ受信
+	 * @param buffer
+	 */
 	public void receive(ByteBuffer buffer) {
 		if(isConnected()) {
 			// データ受信を実施する。
@@ -143,6 +169,10 @@ public class WebSocketConnection {
 			}
 		}
 	}
+	/**
+	 * 受信データ解析と次の処理への受け渡し
+	 * @param buffer
+	 */
 	private void analizeData(ByteBuffer buffer) {
 		if(version == null) {
 			// hybi00
@@ -167,8 +197,6 @@ public class WebSocketConnection {
 						// この時点でデータ取得が完了している。
 						try {
 							getAppInstance().onReceiveData(this, new String(result.array(), "UTF-8").trim());
-//							System.out.println(new String(result.array(), "UTF-8").trim());
-//							this.send(new String(result.array(), "UTF-8").trim());
 						}
 						catch (Exception e) {
 						}
@@ -243,8 +271,6 @@ public class WebSocketConnection {
 					}
 					try {
 						getAppInstance().onReceiveData(this, new String(result.array(), "UTF-8").trim());
-//						System.out.println(new String(result.array(), "UTF-8").trim());
-//						this.send(new String(result.array(), "UTF-8").trim());
 					}
 					catch (Exception e) {
 					}
@@ -253,6 +279,11 @@ public class WebSocketConnection {
 			}
 		}
 	}
+	/**
+	 * 切断確認処理
+	 * @param buffer
+	 * @return
+	 */
 	private boolean checkClosing(ByteBuffer buffer) {
 		if(continuousData) { // 続きデータ取得中なら停止バッファではない。
 			return false;
@@ -274,6 +305,9 @@ public class WebSocketConnection {
 		}
 		return false;
 	}
+	/**
+	 * 停止処理
+	 */
 	public void close() {
 		if(!connected) {
 			return;
@@ -287,6 +321,10 @@ public class WebSocketConnection {
 			e.printStackTrace();
 		}
 	}
+	/**
+	 * 所属アプリケーション参照
+	 * @return
+	 */
 	public ApplicationInstance getAppInstance() {
 		WebSocketManager manager = new WebSocketManager();
 		return manager.getApplication(this);

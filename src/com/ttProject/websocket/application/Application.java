@@ -4,11 +4,15 @@ import java.util.Set;
 
 import com.ttProject.websocket.server.WebSocketConnection;
 
+/**
+ * アプリケーション動作定義
+ * @author taktod
+ */
 public class Application extends ApplicationInstance {
 	@Override
 	public void onConnect(WebSocketConnection connect) {
 		// handshakeを実行して、成立した直後に呼び出される。
-		System.out.println("connect...");
+		System.out.println("connect...:" + connect.getRemoteAddress());
 	}
 	@Override
 	public void onDisconnect(WebSocketConnection connect) {

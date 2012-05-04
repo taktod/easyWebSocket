@@ -6,8 +6,14 @@ import java.security.NoSuchAlgorithmException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * WebSocketのハンドシェイク動作
+ * @author taktod
+ */
 public class WebSocketHandshake {
+	/** 処理コネクション */
 	private WebSocketConnection conn;
+	/** 内部利用変数 */
 	private String key1;
 	private String key2;
 	private String origin;
@@ -16,9 +22,18 @@ public class WebSocketHandshake {
 	private byte[] key3;
 	private String version;
 	private String key;
+	/**
+	 * コンストラクタ
+	 * @param conn
+	 */
 	public WebSocketHandshake(WebSocketConnection conn) {
 		this.conn = conn;
 	}
+	/**
+	 * ハンドシェイク実行
+	 * @param buffer
+	 * @throws Exception
+	 */
 	public void handShake(ByteBuffer buffer) throws Exception {
 		byte[] b = new byte[buffer.capacity()];
 		String data;
@@ -108,6 +123,10 @@ public class WebSocketHandshake {
 			}
 		}
 	}
+	/**
+	 * ハンドシェイク実行RFC6455
+	 * @throws Exception
+	 */
 	private void doRFC6455Handshake() throws Exception {
 		if(key == null) {
 			throw new Exception("key data is missing!");
@@ -140,6 +159,10 @@ public class WebSocketHandshake {
 			e.printStackTrace();
 		}
 	}
+	/**
+	 * ハンドシェイク実行Hybi00
+	 * @throws Exception
+	 */
 	private void doHybi00Handshake() throws Exception {
 		if(path == null) {
 			throw new Exception("get data is invalid!");
@@ -205,6 +228,11 @@ public class WebSocketHandshake {
 		WebSocketManager manager = new WebSocketManager();
 		manager.registerApplication(conn);
 	}
+	/**
+	 * キーから数値を解析する。(hybi00用)
+	 * @param key
+	 * @return
+	 */
 	private Integer getKeyInteger(String key) {
 		StringBuffer numList = new StringBuffer();
 		int spaceCount = 0;
@@ -219,6 +247,10 @@ public class WebSocketHandshake {
 		}
 		return (int)(new Long(numList.toString()) / spaceCount);
 	}
+	/**
+	 * base64エンコード(rfc6455用)
+	 * 組み込み関数にいいものがなかったので自作した。
+	 */
 	private String base64Encode(byte[] bytes) {
 		StringBuffer bitPattern = new StringBuffer();
 		for(int i = 0;i < bytes.length;i ++) {
@@ -257,6 +289,12 @@ public class WebSocketHandshake {
 		}
 		return encoded.toString();
 	}
+	/**
+	 * MD5のエンコード処理
+	 * @param bytes
+	 * @return
+	 * @throws NoSuchAlgorithmException
+	 */
 	private byte[] crypt(byte[] bytes) throws NoSuchAlgorithmException {
 		if(bytes == null || bytes.length == 0) {
 			throw new IllegalArgumentException("bytes for encrypt must have body");
