@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+
 /**
  * サーバー動作を実行するインスタンス
  * @author taktod
@@ -76,6 +77,7 @@ public class WebSocketTransport {
 	 */
 	public void run() {
 		executors = Executors.newFixedThreadPool(threads);
+		WebSocketConnectionManager manager = new WebSocketConnectionManager();
 		try {
 			// 下準備を実行します。
 			ServerSocketChannel serverChannel = null;
@@ -103,6 +105,7 @@ public class WebSocketTransport {
 						channel.configureBlocking(false); // こちらもブロッキングを解除非同期で処理する。
 						channel.register(selector, SelectionKey.OP_READ); // 読み込み処理監視する。
 						// 接続したときの、channelはどこかに保持しておく。
+						manager.registerConnection(channel);
 						continue;
 					}
 					if(key.isReadable()) {
@@ -114,13 +117,23 @@ public class WebSocketTransport {
 							System.out.println(channel.hashCode());
 							// 閉じるイベント
 							// 切断したら、保持していたchannelを破棄する必要あり。
-							channel.close();
+							manager.unregisterConnection(channel);
 							continue;
 						}
-						// データ受信処理
+						WebSocketConnection connect = manager.getConnectData(channel);
+						buffer.flip();
+//						System.out.println(new String(buffer.array()));
+						executors.execute(new ReceiveThread(connect, buffer));
+/*						// データ受信処理
 						System.out.println("読み込みイベント");
 						System.out.println(channel.hashCode());
 						// threadをつくって、そっちで処理させる。
+						ByteBuffer b = ByteBuffer.allocate(4096);
+						channel.read(b);
+						b.flip();
+						String data = new String(b.array());
+						System.out.println(data);
+//						channel.close(); */
  					}
 				}
 			}
