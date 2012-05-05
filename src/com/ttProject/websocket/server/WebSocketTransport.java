@@ -124,7 +124,8 @@ public class WebSocketTransport {
 						}
 						WebSocketConnection connect = manager.getConnectData(channel);
 						buffer.flip();
-						executors.execute(new ReceiveThread(connect, buffer));
+						(new ReceiveThread(connect, buffer)).run();
+//						executors.execute(new ReceiveThread(connect, buffer));
  					}
 				}
 			}

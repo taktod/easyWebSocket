@@ -114,6 +114,7 @@ public class WebSocketConnection {
 	public void send(String string) throws UnsupportedEncodingException, IOException {
 		byte[] data = string.getBytes("UTF8");
 		int size = data.length;
+		System.out.println(size);
 		if(version == null) {
 			// hybi00(safari)
 			ByteBuffer buffer = ByteBuffer.allocate(size + 4);
@@ -125,7 +126,7 @@ public class WebSocketConnection {
 		}
 		else {
 			// rfc6455
-			ByteBuffer buffer = ByteBuffer.allocate(size + 8);
+			ByteBuffer buffer = ByteBuffer.allocate(size * 2 + 8);
 			buffer.put((byte)0x81);
 			// size
 			if(size < 126) {
@@ -139,8 +140,17 @@ public class WebSocketConnection {
 				buffer.put((byte)0x7F);
 				buffer.putLong(size);
 			}
-			for(int i=0;i < size;i ++) {
-				buffer.put((byte)data[i]);
+			int i = 0;
+			try {
+				for(i=0;i < size;i ++) {
+					buffer.put((byte)data[i]);
+				}
+			}
+			catch (Exception e) {
+				System.out.println(size);
+				System.out.println(i);
+				e.printStackTrace();
+				System.exit(-1);
 			}
 			buffer.flip();
 			channel.write(buffer);
@@ -203,9 +213,11 @@ public class WebSocketConnection {
 					}
 					else {
 						if(result.position() > result.capacity() - 10) {
+							System.out.println("バッファがいっぱいなので、フリップさせます。");
 							ByteBuffer newResult = ByteBuffer.allocate(result.capacity() * 8);
 							result.flip();
-							newResult.put(result);
+							newResult.put(result.array()); //最終項に勝手に0がはいるらしい。
+							newResult.position(newResult.position() - 1);
 							result = newResult;
 						}
 						result.put(data);
